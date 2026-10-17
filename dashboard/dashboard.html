@@ -191,7 +191,7 @@
     <div class="hero-in">
       <div class="eyebrow">Healthcare analytics &middot; Big Data Processing</div>
       <h1>Hospital Patient Record Analysis</h1>
-      <p>Diagnoses, illness severity, cost and length of stay across 393,320 New York State inpatient discharges (SPARCS, 2010).</p>
+      <p>Diagnoses, illness severity, cost and length of stay across <span class="js-n">382,522</span> New York State inpatient discharges (SPARCS, 2010).</p>
     </div>
   </header>
 
@@ -221,7 +221,7 @@
         <h3>Data notes</h3>
         <p class="why">Worth knowing before reading the numbers.</p>
         <ul class="notes">
-          <li><b>Sample.</b> 382,522 rows sampled from a file of about 2.5 million; counts are sample counts, not statewide totals.</li>
+          <li><b>Sample.</b> <span class="js-n">382,522</span> rows sampled from a file of about 2.5 million; counts are sample counts, not statewide totals.</li>
           <li><b>Blank severity.</b> Some discharges have no severity recorded and are shown as "Not recorded".</li>
           <li><b>Age groups.</b> The five age groups add up to 382,522, which is 10,798 fewer than the sample.</li>
         </ul>
@@ -304,7 +304,7 @@
     <section class="view" id="view-method" hidden>
       <h3 style="margin:0 0 10px;font-size:15px">Processing pipeline</h3>
       <div class="pipe" style="margin-bottom:18px">
-        <div class="stage"><span class="no">1</span><b>Source</b>NY SPARCS 2010, sampled to 393,320 rows</div>
+        <div class="stage"><span class="no">1</span><b>Source</b>NY SPARCS 2010, sampled to <span class="js-n">382,522</span> rows</div>
         <div class="stage"><span class="no">2</span><b>HDFS (raw)</b>Hadoop 3.3.6, /healthcare_project/raw</div>
         <div class="stage"><span class="no">3</span><b>PySpark cleaning</b>Parse money and stay, drop invalid rows, deduplicate</div>
         <div class="stage"><span class="no">4</span><b>HDFS (clean)</b>Cleaned data written back to HDFS</div>
@@ -316,7 +316,7 @@
           <h3>Limitations</h3>
           <p class="why">Read the results with these in mind.</p>
           <ul class="notes">
-            <li><b>Sample, not the full file.</b> The roughly 2.5 million-row (983 MB) file was sampled to 393,320 rows.</li>
+            <li><b>Sample, not the full file.</b> The roughly 2.5 million-row (983 MB) file was sampled to <span class="js-n">382,522</span> rows.</li>
             <li><b>Association, not causation.</b> Severity goes with higher charges and longer stays; this is one year of observational data.</li>
             <li><b>Blank severity.</b> Shown separately and excluded from the headline ratios.</li>
             <li><b>Length of stay.</b> "120 +" is treated as 120 days, slightly inflating the longest-stay averages.</li>
@@ -328,7 +328,7 @@
           <p class="why">Data source and technology used.</p>
           <dl class="kv">
             <dt>Dataset</dt><dd>NY State SPARCS Hospital Inpatient Discharge, 2010</dd>
-            <dt>Records analysed</dt><dd>393,320 (sample)</dd>
+            <dt>Records analysed</dt><dd><span class="js-n">382,522</span> (sample)</dd>
             <dt>Storage</dt><dd>Hadoop HDFS 3.3.6</dd>
             <dt>Processing</dt><dd>PySpark 3.5.1 (local mode), Python 3.11</dd>
           </dl>
@@ -464,6 +464,7 @@ function bindTip(el, html){
 
 /* ---------- Everything below here needs D and SAMPLE loaded first ---------- */
 function initDashboard(){
+document.querySelectorAll(".js-n").forEach(e=>e.textContent=fmtN(SAMPLE));
 /* ---------- Derived numbers ---------- */
 const chv = D.chg.slice(0,4).map(r=>r[1]), stv = D.stsev.slice(0,4).map(r=>r[1]);
 const rC = chv[3]/chv[0], rS = stv[3]/stv[0];
