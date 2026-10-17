@@ -5,9 +5,6 @@ hospital inpatient discharge records using **HDFS** for distributed storage
 and **PySpark** for processing — surfacing trends across diagnoses, illness
 severity, admission type, age, gender, and billing.
 
-**Team:** Adhithya Rajesh · Anannya AK · Anuvarnna A · Mayooka K
-**Guide:** Ms. Jithika M
-
 ---
 
 ## Architecture
