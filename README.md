@@ -7,7 +7,7 @@ dashboard** built with plain HTML, CSS and JavaScript. It surfaces trends
 across diagnoses, illness severity, admission type, age, gender, county, and
 billing.
 
-*Big Data Processing, Semester S5. Guide: Ms. Jithika M.*
+*Big Data Processing*
 
 ---
 
@@ -128,8 +128,7 @@ healthcare-bigdata-analysis/
 
 ## Live Dashboard
 
-The dashboard replaces a traditional BI tool. It is a single self-contained
-`dashboard.html` that loads the CSV files exported by the pipeline using
+The dashboard is a single self-contained `dashboard.html` that loads the CSV files exported by the pipeline using
 `fetch()`, so every number on screen comes straight from the PySpark output
 and nothing is typed in by hand.
 
@@ -205,7 +204,5 @@ Kings (41,684), Queens (31,805), Nassau (31,603) and Bronx (30,172).
 - Filter out records with a missing severity value during cleaning
 - Extend to multiple discharge years to analyze trends over time
 
-## Team
 
-Adhithya Rajesh, Anannya AK, Anuvarnna A, Mayookha K
-Guide: Ms. Jithika M
+
