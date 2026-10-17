@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital Patient Record Analysis</title>
+<style>
+  :root{
+    --bg:#F4F5F7; --card:#FFFFFF; --line:#DDE1E6; --line2:#ECEEF1;
+    --ink:#1A2330; --ink2:#4B5563; --muted:#8A94A3;
+    --navy:#1F3A5F; --navy-d:#16283F; --navy-l:#E9EEF5;
+    --teal:#9DB4CC; --accent:#2F6DB5; --barlight:#9DB4CC; --amber:#2F6DB5;
+    --side:232px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  [hidden]{display:none!important}
+  h1,h2,h3{font-weight:600}
+  .serif{font-family:Cambria,Georgia,"Times New Roman",serif}
+
+  /* ---------- sidebar ---------- */
+  .side{position:fixed;inset:0 auto 0 0;width:var(--side);background:var(--navy-d);color:#fff;display:flex;flex-direction:column;z-index:30}
+  .brand{padding:20px 20px 18px;border-bottom:1px solid rgba(255,255,255,.12);display:flex;gap:12px;align-items:center}
+  .brand b{display:block;font-size:14.5px;line-height:1.25;font-weight:600}
+  .brand small{display:block;margin-top:2px;font-size:11.5px;color:#9FB0C6;letter-spacing:.02em}
+  nav{padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+  nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;color:#C5D0DE;text-decoration:none;font-size:14px;border-left:3px solid transparent;cursor:pointer}
+  nav a svg{width:18px;height:18px;flex:none;opacity:.9}
+  nav a:hover{background:rgba(255,255,255,.07);color:#fff}
+  nav a.active{background:rgba(255,255,255,.12);color:#fff;font-weight:600;border-left-color:#9DC0E8}
+
+  /* ---------- main ---------- */
+  .main{margin-left:var(--side);min-height:100vh}
+  .hero{position:relative;overflow:hidden;background:var(--navy-d);color:#fff;padding:34px 40px 36px;border-bottom:3px solid var(--accent)}
+  .hero .ecg{position:absolute;right:0;top:0;height:100%;width:38%;opacity:.14;pointer-events:none}
+  .hero-in{position:relative;max-width:820px}
+  .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#9DC0E8;font-weight:600;margin-bottom:10px}
+  .hero h1{font-family:Cambria,Georgia,"Times New Roman",serif;font-size:42px;line-height:1.12;font-weight:700;letter-spacing:.2px}
+  .hero p{margin-top:12px;font-size:15px;color:#C9D3E0;max-width:62ch}
+  .hero .menu{position:absolute;top:14px;left:14px;z-index:2;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+  .menu{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:6px;cursor:pointer;place-items:center}
+  .menu svg{width:18px;height:18px}
+  .pagehead{margin-bottom:18px}
+  .pagehead h2{font-family:Cambria,Georgia,serif;font-size:22px;color:var(--navy);line-height:1.2}
+  .pagehead p{font-size:13px;color:var(--ink2);margin-top:3px}
+  .page{padding:24px 32px 40px;max-width:1280px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:16px}
+  .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
+
+  .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
+  .card h3{font-size:15px;color:var(--ink)}
+  .card .why{font-size:12.5px;color:var(--ink2);margin:3px 0 14px}
+  .card .note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.45}
+  .tog{position:absolute;top:14px;right:16px;font:inherit;font-size:12px;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:5px;padding:3px 10px;cursor:pointer}
+  .tog:hover{background:var(--navy-l)}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
+  .kpi{padding:16px 18px;border-top:3px solid var(--navy)}
+  .kpi .l{font-size:12.5px;color:var(--ink2)}
+  .kpi .v{font-family:Cambria,Georgia,serif;font-size:29px;font-weight:700;color:var(--navy);line-height:1.2;margin:4px 0 2px}
+  .kpi .d{font-size:12px;color:var(--ink2)}
+  .kpi .d b{color:var(--ink);font-weight:600}
+
+  /* segmented */
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{font:inherit;font-size:12.5px;color:var(--ink2);background:#fff;border:0;border-right:1px solid var(--line);padding:5px 13px;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--navy);color:#fff}
+  .filter{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:0 10px;height:34px;background:#fff;color:var(--muted);width:240px;max-width:100%}
+  .filter:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,79,108,.12)}
+  .filter svg{width:15px;height:15px;flex:none}
+  .filter input{border:0;outline:0;font:inherit;font-size:13px;color:var(--ink);width:100%;background:none}
+  .legend{display:flex;gap:18px;font-size:12.5px;color:var(--ink2);margin:0 0 6px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  svg text{font-family:inherit}
+
+  /* bars */
+  .hrow{display:grid;grid-template-columns:170px 1fr;align-items:center;gap:12px;margin:8px 0}
+  .hrow.sm{grid-template-columns:110px 1fr}
+  .hrow .lab{font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hrow .track{position:relative;height:18px}
+  .bar{height:100%;background:var(--barlight);border-radius:0 3px 3px 0;min-width:2px}
+  .hrow .bar.hl,.col .cb.hl{background:var(--navy)}
+  .hrow .val{position:absolute;top:50%;transform:translateY(-50%);margin-left:8px;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .hrow:hover .bar{filter:brightness(1.15)} .hrow:hover .lab{color:var(--ink)}
+  .cols{display:flex;align-items:flex-end;gap:14px;height:230px;padding-top:24px;border-bottom:1px solid var(--line)}
+  .col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
+  .col .cv{font-size:12px;font-weight:600;margin-bottom:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .col .cb{width:100%;max-width:64px;background:var(--barlight);border-radius:3px 3px 0 0}
+  .col .cb.na{background:repeating-linear-gradient(45deg,#ECEEF1,#ECEEF1 5px,#D3D8DF 5px,#D3D8DF 10px);border:1px dashed var(--muted)}
+  .col:hover .cb{filter:brightness(1.15)}
+  .clabs{display:flex;gap:14px;margin-top:7px}
+  .clabs div{flex:1;text-align:center;font-size:12px;color:var(--ink2);min-width:0}
+  .stack{display:flex;gap:2px;height:22px}
+  .stack div{display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;min-width:0;color:#fff}
+  .stack div:first-child{background:var(--barlight);color:#16283F;border-radius:3px 0 0 3px}
+  .stack div:last-child{background:var(--navy);border-radius:0 3px 3px 0}
+  .stack div:hover{filter:brightness(1.12)}
+  .none{font-size:13px;color:var(--muted);padding:8px 0}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:13px;display:none}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line2)}
+  th{background:var(--bg);color:var(--ink2);font-weight:600;font-size:12px}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .card.showtable table{display:table} .card.showtable .viz{display:none}
+
+  /* findings & notes */
+  .finds{list-style:none;counter-reset:f}
+  .finds li{counter-increment:f;display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+  .finds li:first-child{border-top:0;padding-top:2px}
+  .finds li::before{content:counter(f);flex:none;width:24px;height:24px;border-radius:50%;background:var(--navy-l);color:var(--navy);font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
+  .finds b{color:var(--ink)}
+  .notes{list-style:none}
+  .notes li{padding:9px 0 9px 16px;border-top:1px solid var(--line2);font-size:13px;color:var(--ink2);position:relative}
+  .notes li:first-child{border-top:0}
+  .notes li::before{content:"";position:absolute;left:0;top:16px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .notes b{color:var(--ink)}
+  .pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .stage{padding:16px 16px 18px;border-right:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+  .stage:last-child{border-right:0}
+  .stage .no{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;margin-bottom:8px}
+  .stage b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:3px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:13px}
+  .kv dt{color:var(--muted)} .kv dd{color:var(--ink)}
+  footer{padding:6px 32px 28px;font-size:12px;color:var(--muted)}
+
+  #tip{position:fixed;pointer-events:none;background:#1A2330;color:#fff;font-size:12.5px;padding:7px 10px;border-radius:5px;opacity:0;transition:opacity .08s;z-index:60;max-width:250px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  #tip span{color:#B7C8D0}
+
+  /* ---------- loading / error overlay ---------- */
+  .overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .obox{max-width:480px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:28px 30px;text-align:center}
+  .obox h3{color:#B3261E;margin-bottom:10px;font-size:17px}
+  .obox p{color:var(--ink2);font-size:13.5px;line-height:1.6;margin-top:10px;text-align:left}
+  .obox code,.obox pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;background:var(--line2);border-radius:4px;padding:2px 6px;font-size:12.5px}
+  .obox pre{display:block;padding:10px 12px;margin:8px 0;overflow-x:auto;text-align:left}
+  .spinner{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:1180px){.kpis{grid-template-columns:repeat(3,1fr)}.pipe{grid-template-columns:repeat(3,1fr)}.stage:nth-child(3){border-right:0}.stage:nth-child(-n+3){border-bottom:1px solid var(--line)}}
+  @media(max-width:1000px){
+    .side{transform:translateX(-100%);transition:transform .2s}
+    .side.open{transform:none;box-shadow:12px 0 30px rgba(0,0,0,.3)}
+    .main{margin-left:0}
+    .menu{display:grid}
+    .hero{padding:62px 18px 26px}.hero h1{font-size:30px}.page{padding:18px}
+    .s8,.s7,.s6,.s5,.s4{grid-column:span 12}
+    footer{padding:6px 18px 24px}
+  }
+  @media(max-width:700px){
+    .side,.side.open{transform:none;inset:auto 0 0 0;width:auto;height:60px;flex-direction:row;box-shadow:none;border-top:1px solid rgba(255,255,255,.15)}
+    .brand,
+    nav{flex-direction:row;flex:1;padding:4px;gap:0;justify-content:space-around}
+    nav a{flex-direction:column;gap:2px;padding:6px 4px;font-size:10.5px;border-left:0;border-top:3px solid transparent;border-radius:0;flex:1;text-align:center;justify-content:center}
+    nav a.active{border-left:0;border-top-color:#9DC0E8}
+    .menu{display:none}
+    .main{padding-bottom:64px}
+    .hero{padding:26px 18px 24px}.hero h1{font-size:27px}.hero .menu{display:none}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .pipe{grid-template-columns:1fr}.stage{border-right:0;border-bottom:1px solid var(--line)}.stage:last-child{border-bottom:0}
+    .hrow,.hrow.sm{grid-template-columns:112px 1fr}
+    .kv{grid-template-columns:1fr}.kv dd{margin-bottom:6px}
+  }
+  @media(max-width:480px){.kpis{grid-template-columns:1fr}}
+  @media print{.side,.menu,.tog,.filter{display:none}.main{margin:0}[hidden]{display:block!important}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<aside class="side" id="side">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9DC0E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+    <div><b>Analytics Dashboard</b><small>Inpatient discharges, 2010</small></div>
+  </div>
+  <nav id="nav" aria-label="Sections">
+    <a href="#overview" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg><span>Overview</span></a>
+    <a href="#diagnoses" data-view="diagnoses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Diagnoses</span></a>
+    <a href="#severity" data-view="severity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Severity &amp; Stay</span></a>
+    <a href="#patients" data-view="patients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3.2-5.5 6.5-5.5s6 2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.5c2.5.2 4.2 1.8 4.7 4.5"/></svg><span>Patients</span></a>
+    <a href="#method" data-view="method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/></svg><span>Method</span></a>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="hero">
+    <button class="menu" id="menu" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="hero-in">
+      <div class="eyebrow">Healthcare analytics &middot; Big Data Processing</div>
+      <h1>Hospital Patient Record Analysis</h1>
+      <p>Diagnoses, illness severity, cost and length of stay across 393,320 New York State inpatient discharges (SPARCS, 2010).</p>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="pagehead"><h2 id="ptitle">Overview</h2><p id="psub"></p></div>
+
+    <!-- ===== OVERVIEW ===== -->
+    <section class="view" id="view-overview" hidden>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <div class="card s8">
+          <div class="head">
+            <div><h3>Cost and length of stay rise with severity</h3>
+            <p class="why">Both measures shown relative to a Minor case (Minor = 1×) so they fit one scale.</p></div>
+            <div class="seg" id="seg"><button data-m="both" class="on">Both</button><button data-m="charges">Charges</button><button data-m="stay">Stay</button></div>
+          </div>
+          <div id="v-main"></div>
+          <p class="note">Hover a severity level for the actual values. Discharges with a blank severity are left out of this chart.</p>
+        </div>
+        <div class="card s4">
+          <h3>Key findings</h3>
+          <p class="why">Associations in one year of sampled data.</p>
+          <ol class="finds" id="finds"></ol>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Data notes</h3>
+        <p class="why">Worth knowing before reading the numbers.</p>
+        <ul class="notes">
+          <li><b>Sample.</b> 382,522 rows sampled from a file of about 2.5 million; counts are sample counts, not statewide totals.</li>
+          <li><b>Blank severity.</b> Some discharges have no severity recorded and are shown as "Not recorded".</li>
+          <li><b>Age groups.</b> The five age groups add up to 382,522, which is 10,798 fewer than the sample.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== DIAGNOSES ===== -->
+    <section class="view" id="view-diagnoses" hidden>
+      <div class="head" style="margin-bottom:14px">
+        <p style="color:var(--ink2);font-size:13px;max-width:60ch">Diagnosis categories are CCS groupings from the SPARCS file.</p>
+        <label class="filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Filter diagnoses" aria-label="Filter diagnoses"></label>
+      </div>
+      <div class="grid">
+        <div class="card s7" id="c-diag">
+          <button class="tog">View table</button>
+          <h3>Top 10 diagnoses by discharges</h3>
+          <p class="why">Liveborn is almost three times the next most common diagnosis.</p>
+          <div class="viz" id="v-diag"></div><table id="t-diag"></table>
+        </div>
+        <div class="card s5" id="c-gen">
+          <button class="tog">View table</button>
+          <h3>Gender split, six leading diagnoses</h3>
+          <p class="why">Mostly balanced; Coronary Atherosclerosis skews male.</p>
+          <div class="legend"><span><i style="background:var(--barlight)"></i>Female</span><span><i style="background:var(--navy)"></i>Male</span></div>
+          <div class="viz" id="v-gen"></div><table id="t-gen"></table>
+          <p class="note">Share of female and male records. Liveborn also has 7 records of unknown gender, not drawn.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SEVERITY & STAY ===== -->
+    <section class="view" id="view-severity" hidden>
+      <div class="grid">
+        <div class="card s6" id="c-chg">
+          <button class="tog">View table</button>
+          <h3>Average charges by illness severity</h3>
+          <p class="why">Extreme cases cost about 6.7 times a Minor case (US dollars).</p>
+          <div class="viz" id="v-chg"></div><table id="t-chg"></table>
+          <p class="note">*Not recorded: blank severity field. Shown apart from the ranking.</p>
+        </div>
+        <div class="card s6" id="c-stsev">
+          <button class="tog">View table</button>
+          <h3>Average length of stay by illness severity</h3>
+          <p class="why">Extreme cases stay about 5 times longer than Minor ones (days).</p>
+          <div class="viz" id="v-stsev"></div><table id="t-stsev"></table>
+          <p class="note">*Not recorded: blank severity field. Stays of 120+ days count as 120.</p>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card s6" id="c-adm">
+          <button class="tog">View table</button>
+          <h3>Average length of stay by admission type</h3>
+          <p class="why">Trauma admissions stay longest; newborns shortest (days).</p>
+          <div class="viz" id="v-adm"></div><table id="t-adm"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PATIENTS ===== -->
+    <section class="view" id="view-patients" hidden>
+      <div class="grid">
+        <div class="card s6" id="c-age">
+          <button class="tog">View table</button>
+          <h3>Discharges by age group</h3>
+          <p class="why">Hospitalisation rises with age; the 70 or older group is the largest.</p>
+          <div class="viz" id="v-age"></div><table id="t-age"></table>
+          <p class="note">Age bands differ in width, and 70 or older is open-ended, so bars are not per-year rates.</p>
+        </div>
+        <div class="card s6" id="c-cty">
+          <button class="tog">View table</button>
+          <h3>Top 10 counties by discharges</h3>
+          <p class="why">Manhattan and Kings (Brooklyn) lead in patient volume.</p>
+          <div class="viz" id="v-cty"></div><table id="t-cty"></table>
+          <p class="note">County of the hospital, not of the patient's residence.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== METHOD ===== -->
+    <section class="view" id="view-method" hidden>
+      <h3 style="margin:0 0 10px;font-size:15px">Processing pipeline</h3>
+      <div class="pipe" style="margin-bottom:18px">
+        <div class="stage"><span class="no">1</span><b>Source</b>NY SPARCS 2010, sampled to 393,320 rows</div>
+        <div class="stage"><span class="no">2</span><b>HDFS (raw)</b>Hadoop 3.3.6, /healthcare_project/raw</div>
+        <div class="stage"><span class="no">3</span><b>PySpark cleaning</b>Parse money and stay, drop invalid rows, deduplicate</div>
+        <div class="stage"><span class="no">4</span><b>HDFS (clean)</b>Cleaned data written back to HDFS</div>
+        <div class="stage"><span class="no">5</span><b>PySpark analysis</b>Seven aggregations on the cleaned data</div>
+        <div class="stage"><span class="no">6</span><b>Dashboard</b>Results exported as CSV and visualised</div>
+      </div>
+      <div class="grid">
+        <div class="card s6">
+          <h3>Limitations</h3>
+          <p class="why">Read the results with these in mind.</p>
+          <ul class="notes">
+            <li><b>Sample, not the full file.</b> The roughly 2.5 million-row (983 MB) file was sampled to 393,320 rows.</li>
+            <li><b>Association, not causation.</b> Severity goes with higher charges and longer stays; this is one year of observational data.</li>
+            <li><b>Blank severity.</b> Shown separately and excluded from the headline ratios.</li>
+            <li><b>Length of stay.</b> "120 +" is treated as 120 days, slightly inflating the longest-stay averages.</li>
+            <li><b>Charges are billed amounts,</b> not what was paid or the hospital's cost.</li>
+          </ul>
+        </div>
+        <div class="card s6">
+          <h3>Project details</h3>
+          <p class="why">Data source and technology used.</p>
+          <dl class="kv">
+            <dt>Dataset</dt><dd>NY State SPARCS Hospital Inpatient Discharge, 2010</dd>
+            <dt>Records analysed</dt><dd>393,320 (sample)</dd>
+            <dt>Storage</dt><dd>Hadoop HDFS 3.3.6</dd>
+            <dt>Processing</dt><dd>PySpark 3.5.1 (local mode), Python 3.11</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer>Source: NY State SPARCS Hospital Inpatient Discharge Data (2010) &middot; Big Data Processing project</footer>
+</div>
+<div id="tip"></div>
+
+<div id="loading" class="overlay"><div class="obox"><div class="spinner"></div><p>Loading data from <code>data/*.csv</code>&hellip;</p></div></div>
+<div id="loadError" class="overlay" hidden>
+  <div class="obox">
+    <h3>Couldn't load the data</h3>
+    <p id="loadErrorMsg" class="errmsg"></p>
+    <p>This page loads its numbers from CSV files in a <code>data/</code> folder next to it, using <code>fetch()</code>. Browsers block that when the page is opened directly as a file — it has to be served over <code>http://</code>.</p>
+    <p><b>Fix:</b> open a terminal in the <code>dashboard</code> folder and run:</p>
+    <pre>python -m http.server 8000</pre>
+    <p>then open <code>http://localhost:8000/dashboard.html</code> in your browser.</p>
+  </div>
+</div>
+
+<script>
+/* ---------- CSV loading ---------- */
+/* Reads the dashboard's data from the CSVs your PySpark pipeline exports
+   into dashboard/data/. This page must be served over http:// (a local
+   server), not opened directly as a file:// path, or fetch() will be
+   blocked by the browser. See the loading screen below for instructions. */
+
+function splitCSVLine(line){
+  const out=[]; let cur="", inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){ if(inQ && line[i+1]==='"'){ cur+='"'; i++; } else inQ=!inQ; }
+    else if(c===',' && !inQ){ out.push(cur); cur=""; }
+    else cur+=c;
+  }
+  out.push(cur);
+  return out;
+}
+function parseCSV(text){
+  const lines = text.replace(/\r/g,"").split("\n").filter(l=>l.length);
+  if(!lines.length) return [];
+  const headers = splitCSVLine(lines[0]).map(h=>h.trim());
+  return lines.slice(1).map(line=>{
+    const cols = splitCSVLine(line);
+    const row = {};
+    headers.forEach((h,i)=> row[h] = (cols[i]??"").trim());
+    return row;
+  });
+}
+async function fetchCSV(path){
+  const res = await fetch(path);
+  if(!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
+  return parseCSV(await res.text());
+}
+async function fetchJSON(path, fallback){
+  try{ const res = await fetch(path); if(!res.ok) throw 0; return await res.json(); }
+  catch(_){ return fallback; }
+}
+
+/* Turns the seven raw CSV tables into the same shape the chart code
+   expects: arrays of [label, value] pairs (or a nested object for gender). */
+function buildData(raw){
+  const SEV_ORDER = ["Minor","Moderate","Major","Extreme"];
+  const AGE_ORDER = ["0 to 17","18 to 29","30 to 49","50 to 69","70 or Older"];
+  const sevLabel = v => (v||"").trim() || "Not recorded";
+
+  const diag = raw.diag
+    .map(r=>[r["CCS Diagnosis Description"], +r["count"]])
+    .sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  function sevPairs(rows, valueKey){
+    const known=[], unknown=[];
+    rows.forEach(r=>{
+      const label = sevLabel(r["APR Severity of Illness Description"]);
+      const val = +r[valueKey];
+      (SEV_ORDER.includes(label) ? known : unknown).push([SEV_ORDER.includes(label)?label:label+"*", val]);
+    });
+    known.sort((a,b)=>SEV_ORDER.indexOf(a[0])-SEV_ORDER.indexOf(b[0]));
+    return known.concat(unknown);
+  }
+  const chg   = sevPairs(raw.chg,   "Avg Charges");
+  const stsev = sevPairs(raw.stsev, "Avg Length of Stay");
+
+  const adm = raw.adm
+    .map(r=>[r["Type of Admission"], +r["Avg Length of Stay"]])
+    .sort((a,b)=>b[1]-a[1]);
+
+  const age = raw.age
+    .map(r=>[r["Age Group"], +r["count"]])
+    .sort((a,b)=>{
+      const ia=AGE_ORDER.indexOf(a[0]), ib=AGE_ORDER.indexOf(b[0]);
+      if(ia===-1 && ib===-1) return 0;
+      if(ia===-1) return 1; if(ib===-1) return -1;
+      return ia-ib;
+    });
+
+  const cty = raw.cty
+    .map(r=>[r["Hospital County"], +r["count"]])
+    .sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  const gen = {};
+  raw.gen.forEach(r=>{
+    const name = r["CCS Diagnosis Description"];
+    const g = (r["Gender"]||"").trim().toUpperCase();
+    const n = +r["count"];
+    if(!gen[name]) gen[name] = {F:0,M:0,U:0};
+    if(g.startsWith("F")) gen[name].F += n;
+    else if(g.startsWith("M")) gen[name].M += n;
+    else gen[name].U += n;
+  });
+
+  return {diag, chg, stsev, adm, age, cty, gen};
+}
+
+let D = null, SAMPLE = 0;
+const $ = s => document.querySelector(s);
+const fmtN = n => n.toLocaleString("en-US");
+const fmtUSD = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmtD = n => n.toFixed(1) + " d";
+const fmtD2 = n => n.toFixed(2) + " d";
+const title = s => s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()).replace("Chf","CHF").replace("Atheroscler","Atherosclerosis").replace("Relatd","Related");
+
+/* ---------- Tooltip ---------- */
+const tip = $("#tip");
+function bindTip(el, html){
+  el.addEventListener("mousemove", e=>{ tip.innerHTML = typeof html==="function"?html():html; tip.style.opacity = 1;
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 260) + "px"; tip.style.top = Math.min(e.clientY + 14, innerHeight - 90) + "px"; });
+  el.addEventListener("mouseleave", ()=> tip.style.opacity = 0);
+}
+
+/* ---------- Everything below here needs D and SAMPLE loaded first ---------- */
+function initDashboard(){
+/* ---------- Derived numbers ---------- */
+const chv = D.chg.slice(0,4).map(r=>r[1]), stv = D.stsev.slice(0,4).map(r=>r[1]);
+const rC = chv[3]/chv[0], rS = stv[3]/stv[0];
+const ageTotal = D.age.reduce((a,r)=>a+r[1],0);
+
+/* ---------- KPI cards ---------- */
+[
+ ["Discharges analysed", fmtN(SAMPLE), "<b>Sample</b> loaded by the pipeline"],
+ ["Avg charges, Extreme severity", fmtUSD(chv[3]), `<b>${rC.toFixed(1)}×</b> a Minor case`],
+ ["Avg stay, Extreme severity", fmtD(stv[3]), `<b>${rS.toFixed(1)}×</b> a Minor case`],
+ ["Most common diagnosis", fmtN(D.diag[0][1]), `<b>${title(D.diag[0][0])}</b>, ${(D.diag[0][1]/D.diag[1][1]).toFixed(1)}× the next`],
+ ["Busiest county", fmtN(D.cty[0][1]), `<b>${D.cty[0][0]}</b>, ${(D.cty[0][1]/D.cty[1][1]).toFixed(1)}× ${D.cty[1][0]}`]
+].forEach(k=>{ const d=document.createElement("div"); d.className="card kpi";
+  d.innerHTML=`<div class="l">${k[0]}</div><div class="v">${k[1]}</div><div class="d">${k[2]}</div>`; $("#kpis").appendChild(d); });
+
+/* ---------- Key findings (built from whatever D actually contains, not
+   assumed labels, so this still reads correctly if the pipeline's output
+   changes slightly between runs) ---------- */
+const topDiag = D.diag[0], secondDiag = D.diag[1];
+const topAdm = D.adm[0], bottomAdm = D.adm[D.adm.length-1];
+const topAge = D.age.reduce((a,r)=> r[1]>a[1] ? r : a, D.age[0]);
+const topCty = D.cty[0], secondCty = D.cty[1];
+// Diagnosis with the most lopsided gender split, for the gender finding
+let skewKey=null, skewVal=-1;
+Object.keys(D.gen).forEach(k=>{
+  const g=D.gen[k], t=g.F+g.M; if(!t) return;
+  const skew = Math.abs(g.F-g.M)/t;
+  if(skew>skewVal){ skewVal=skew; skewKey=k; }
+});
+const skew = skewKey ? D.gen[skewKey] : null;
+
+[
+ `<span><b>${title(topDiag[0])} leads.</b> ${fmtN(topDiag[1])} discharges, ${(topDiag[1]/secondDiag[1]).toFixed(1)}× ${title(secondDiag[0])}.</span>`,
+ `<span><b>Severity goes with cost.</b> Extreme averages ${fmtUSD(chv[3])} against ${fmtUSD(chv[0])} for Minor.</span>`,
+ `<span><b>Severity goes with stay.</b> ${D.stsev[3][1]} days for Extreme against ${D.stsev[0][1]} for Minor.</span>`,
+ `<span><b>${topAdm[0]} stays longest</b> (${topAdm[1]} days); ${bottomAdm[0].toLowerCase()} shortest (${bottomAdm[1]}).</span>`,
+ `<span><b>Age.</b> The ${topAge[0]} group has the most discharges (${fmtN(topAge[1])}).</span>`,
+ skew ? `<span><b>Gender</b> is mostly balanced, except ${title(skewKey)}: ${fmtN(skew.M)} male, ${fmtN(skew.F)} female.</span>` : "",
+ `<span><b>Geography.</b> ${topCty[0]} and ${secondCty[0]} lead among counties.</span>`
+].filter(Boolean).forEach(t=>{ const li=document.createElement("li"); li.innerHTML=t; $("#finds").appendChild(li); });
+
+/* ---------- Main indexed line chart ---------- */
+const cats = D.chg.slice(0,4).map(r=>r[0]);
+const SER = [
+  {key:"charges", name:"Charges", color:"#1F3A5F", dash:"",    raw:chv, idx:chv.map(v=>v/chv[0]), f:fmtUSD},
+  {key:"stay",    name:"Length of stay", color:"#5B86B8", dash:"7 5", raw:stv, idx:stv.map(v=>v/stv[0]), f:fmtD2}
+];
+function mainChart(mode){
+  const W=760,H=450,L=40,R=130,T=14,B=34,iw=W-L-R,ih=H-T-B,MAX=7;
+  const x=i=>L+(i+.5)/cats.length*iw, y=v=>T+ih-(v/MAX)*ih;
+  const vis=SER.filter(s=>mode==="both"||s.key===mode);
+  let g="";
+  for(let t=0;t<=MAX;t++){ g+=`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="${t?"#E8EBEF":"#B7BFCA"}"/>`+
+    (t?`<text x="${L-8}" y="${y(t)+4}" text-anchor="end" font-size="11" fill="#8A94A3">${t}×</text>`:""); }
+  cats.forEach((c,i)=>{ g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="12.5" fill="#4B5563">${c}</text>`; });
+  let body="";
+  vis.forEach(s=>{
+    const pts=s.idx.map((v,i)=>[x(i),y(v)]);
+    const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+    body+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" ${s.dash?`stroke-dasharray="${s.dash}"`:""}/>`;
+    pts.forEach(p=>{ body+=`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="#fff" stroke="${s.color}" stroke-width="2"/>`; });
+    const e=pts[3];
+    body+=`<text x="${e[0]+14}" y="${e[1]+4}" font-size="12.5" font-weight="600" fill="#1A2330">${s.name} ${s.idx[3].toFixed(1)}×</text>`;
+  });
+  let hov="";
+  cats.forEach((c,i)=>{ hov+=`<rect class="hz" data-i="${i}" x="${L+i/cats.length*iw}" y="${T}" width="${iw/cats.length}" height="${ih}" fill="transparent"/>`; });
+  $("#v-main").innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Charges and length of stay relative to a Minor case, by severity">${g}<line id="xh" y1="${T}" y2="${T+ih}" stroke="#B7BFCA" stroke-dasharray="3 4" style="display:none"/>${body}${hov}</svg>`;
+  const xh=$("#xh");
+  document.querySelectorAll("#v-main .hz").forEach(r=>{
+    const i=+r.dataset.i;
+    r.addEventListener("mouseenter",()=>{ xh.setAttribute("x1",x(i)); xh.setAttribute("x2",x(i)); xh.style.display=""; });
+    r.addEventListener("mouseleave",()=>{ xh.style.display="none"; });
+    bindTip(r,()=>`<b>${cats[i]} severity</b>`+vis.map(s=>`<br><span>${s.name}:</span> ${s.f(s.raw[i])} (${s.idx[i].toFixed(2)}×)`).join(""));
+  });
+}
+mainChart("both");
+document.querySelectorAll("#seg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#seg button").forEach(o=>o.classList.remove("on")); b.classList.add("on"); mainChart(b.dataset.m); }));
+
+/* ---------- Builders ---------- */
+function hbars(sel, rows, fmt, o={}){
+  const host=$(sel), max=Math.max(...rows.map(r=>r[1])); host.innerHTML="";
+  if(!rows.length){ host.innerHTML='<div class="none">No matching diagnosis.</div>'; return; }
+  rows.forEach((r,i)=>{
+    const w=(r[1]/max*78).toFixed(1), name=o.label?o.label(r[0]):r[0], row=document.createElement("div"); row.className="hrow"+(o.sm?" sm":"");
+    row.innerHTML=`<div class="lab" title="${name}">${name}</div><div class="track"><div class="bar ${o.hl!==false&&r[1]===max?"hl":""}" style="width:${w}%"></div><span class="val" style="left:${w}%">${fmt(r[1])}</span></div>`;
+    bindTip(row,`<b>${name}</b><br>${fmt(r[1])}${o.pct?`<br><span>${(r[1]/SAMPLE*100).toFixed(1)}% of sample</span>`:""}`);
+    host.appendChild(row);
+  });
+}
+function columns(sel, rows, fmt){
+  const host=$(sel), valid=rows.filter(r=>!r[0].includes("*")), max=Math.max(...valid.map(r=>r[1])), top=valid.find(r=>r[1]===max)[0];
+  const cols=document.createElement("div"), labs=document.createElement("div"); cols.className="cols"; labs.className="clabs";
+  rows.forEach(r=>{
+    const na=r[0].includes("*"), h=Math.min(r[1]/max*86,100), c=document.createElement("div"); c.className="col";
+    c.innerHTML=`<div class="cv">${fmt(r[1])}</div><div class="cb ${na?"na":(r[0]===top?"hl":"")}" style="height:${h}%"></div>`;
+    bindTip(c,`<b>${r[0].replace("*","")}</b><br>${fmt(r[1])}${na?"<br><span>Blank severity field in source</span>":""}`);
+    cols.appendChild(c); const l=document.createElement("div"); l.textContent=r[0]; labs.appendChild(l);
+  });
+  host.appendChild(cols); host.appendChild(labs);
+}
+function table(sel, heads, rows){
+  $(sel).innerHTML=`<thead><tr>${heads.map((h,i)=>`<th class="${i?"n":""}">${h}</th>`).join("")}</tr></thead><tbody>`+
+    rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${i?"n":""}">${c}</td>`).join("")}</tr>`).join("")+"</tbody>";
+}
+function genderBars(q=""){
+  const host=$("#v-gen"); host.innerHTML="";
+  const order=Object.keys(D.gen).sort((a,b)=>(D.gen[b].F+D.gen[b].M)-(D.gen[a].F+D.gen[a].M)).filter(k=>title(k).toLowerCase().includes(q.toLowerCase()));
+  if(!order.length){ host.innerHTML='<div class="none">No matching diagnosis.</div>'; return; }
+  order.forEach(k=>{
+    const g=D.gen[k], t=g.F+g.M, fp=g.F/t*100, mp=g.M/t*100, row=document.createElement("div"); row.className="hrow sm";
+    row.innerHTML=`<div class="lab" title="${title(k)}">${title(k)}</div><div class="stack"><div style="width:${fp}%">${fp.toFixed(0)}%</div><div style="width:${mp}%">${mp.toFixed(0)}%</div></div>`;
+    const [f,m]=row.querySelectorAll(".stack div");
+    bindTip(f,`<b>${title(k)}</b><br>Female: ${fmtN(g.F)}<br><span>${fp.toFixed(1)}% of female + male</span>`);
+    bindTip(m,`<b>${title(k)}</b><br>Male: ${fmtN(g.M)}<br><span>${mp.toFixed(1)}% of female + male</span>`);
+    host.appendChild(row);
+  });
+}
+function renderDiag(q=""){ hbars("#v-diag", D.diag.filter(r=>title(r[0]).toLowerCase().includes(q.toLowerCase())), fmtN, {label:title, pct:true}); genderBars(q); }
+
+renderDiag();
+$("#q").addEventListener("input",e=>renderDiag(e.target.value));
+columns("#v-chg", D.chg, fmtUSD);
+columns("#v-stsev", D.stsev, fmtD);
+hbars("#v-adm", D.adm, fmtD2, {sm:true});
+columns("#v-age", D.age, fmtN);
+hbars("#v-cty", D.cty, fmtN, {sm:true, pct:true});
+
+table("#t-diag",["Diagnosis","Discharges","% of sample"], D.diag.map(r=>[title(r[0]),fmtN(r[1]),(r[1]/SAMPLE*100).toFixed(2)+"%"]));
+table("#t-gen",["Diagnosis","Female","Male","Unknown"], Object.keys(D.gen).map(k=>[title(k),fmtN(D.gen[k].F),fmtN(D.gen[k].M),fmtN(D.gen[k].U||0)]));
+table("#t-chg",["Severity","Avg charges"], D.chg.map(r=>[r[0],fmtUSD(r[1])]));
+table("#t-stsev",["Severity","Avg stay"], D.stsev.map(r=>[r[0],r[1].toFixed(2)+" days"]));
+table("#t-adm",["Admission type","Avg stay"], D.adm.map(r=>[r[0],r[1].toFixed(2)+" days"]));
+table("#t-age",["Age group","Discharges"], D.age.map(r=>[r[0],fmtN(r[1])]));
+table("#t-cty",["County","Discharges"], D.cty.map(r=>[r[0],fmtN(r[1])]));
+document.querySelectorAll(".tog").forEach(b=>b.addEventListener("click",()=>{
+  const c=b.closest(".card"); c.classList.toggle("showtable"); b.textContent=c.classList.contains("showtable")?"View chart":"View table"; }));
+} /* ---------- end initDashboard() ---------- */
+
+/* ---------- Page navigation: each sidebar item opens its own page ---------- */
+const PAGES = {
+  overview:  ["Overview",        "Headline numbers and the main relationship in the data."],
+  diagnoses: ["Diagnoses",       "Which conditions account for the most discharges, and who they affect."],
+  severity:  ["Severity & Stay", "How illness severity and admission type relate to charges and length of stay."],
+  patients:  ["Patients",        "Who is admitted, by age group, and where the hospitals are."],
+  method:    ["Method",          "How the data was processed, and the limits of the analysis."]
+};
+function show(id){
+  if(!PAGES[id]) id="overview";
+  Object.keys(PAGES).forEach(k=>{ $("#view-"+k).hidden = (k!==id); });
+  document.querySelectorAll("#nav a").forEach(a=>{ const on=a.dataset.view===id; a.classList.toggle("active",on); if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  $("#ptitle").textContent=PAGES[id][0]; $("#psub").textContent=PAGES[id][1];
+  document.title=PAGES[id][0]+" | Hospital Patient Record Analysis";
+  $("#side").classList.remove("open"); window.scrollTo(0,0);
+  tip.style.opacity=0;
+}
+document.querySelectorAll("#nav a").forEach(a=>a.addEventListener("click",e=>{
+  e.preventDefault(); const id=a.dataset.view; show(id);
+  try{ history.replaceState(null,"","#"+id); }catch(_){ }
+}));
+$("#menu").addEventListener("click",()=>$("#side").classList.toggle("open"));
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+
+/* ---------- Boot: load the CSVs, then build the page ---------- */
+const DATA_DIR = "data";
+async function boot(){
+  try{
+    const [diag, chg, stsev, adm, age, cty, gen, meta] = await Promise.all([
+      fetchCSV(`${DATA_DIR}/top_conditions.csv`),
+      fetchCSV(`${DATA_DIR}/avg_charges_by_severity.csv`),
+      fetchCSV(`${DATA_DIR}/avg_stay_by_severity.csv`),
+      fetchCSV(`${DATA_DIR}/avg_stay_by_admission.csv`),
+      fetchCSV(`${DATA_DIR}/age_group_distribution.csv`),
+      fetchCSV(`${DATA_DIR}/top_counties.csv`),
+      fetchCSV(`${DATA_DIR}/gender_by_condition.csv`),
+      fetchJSON(`${DATA_DIR}/meta.json`, null)
+    ]);
+    D = buildData({diag, chg, stsev, adm, age, cty, gen});
+    SAMPLE = meta && meta.total_rows ? meta.total_rows : D.age.reduce((a,r)=>a+r[1],0);
+    initDashboard();
+    show(location.hash.slice(1));
+    $("#loading").hidden = true;
+  }catch(err){
+    console.error(err);
+    $("#loading").hidden = true;
+    $("#loadError").hidden = false;
+    $("#loadErrorMsg").textContent = err.message || String(err);
+  }
+}
+boot();
+</script>
+</body>
+</html>

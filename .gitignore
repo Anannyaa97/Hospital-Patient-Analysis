@@ -1,0 +1,19 @@
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environment
+venv/
+env/
+.env
+
+# Data (large / raw data usually not committed — note this in README instead)
+data/raw/*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
