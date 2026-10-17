@@ -7,7 +7,6 @@ dashboard** built with plain HTML, CSS and JavaScript. It surfaces trends
 across diagnoses, illness severity, admission type, age, gender, county, and
 billing.
 
-*Big Data Processing*
 
 ---
 
